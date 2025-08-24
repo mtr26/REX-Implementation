@@ -318,4 +318,3 @@ class Transformer(nn.Module):
         output = self.decoder(decoder_input_ids, latent, mask=decoder_attention_mask)
         return output
     
-
