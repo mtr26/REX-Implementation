@@ -309,8 +309,8 @@ class Transformer(nn.Module):
             dropout=dropout
         )
 
-    def forward(self, src: torch.Tensor, tgt: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
-        latent = self.encoder(src)
-        output = self.decoder(tgt, latent, mask=mask)
+    def forward(self, input_ids: torch.Tensor, decoder_input_ids: torch.Tensor, attention_mask: torch.Tensor = None, decoder_attention_mask: torch.Tensor = None) -> torch.Tensor:
+        latent = self.encoder(input_ids, mask=attention_mask)
+        output = self.decoder(decoder_input_ids, latent, mask=decoder_attention_mask)
         return output
     
