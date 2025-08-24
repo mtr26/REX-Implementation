@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from utils import  scaled_dot_product_attention_grouped_flash, MLP, RMSNorm
 import torch._dynamo
 from dataclasses import dataclass
+from transformers.modeling_outputs import Seq2SeqLMOutput
 
 torch.backends.cuda.enable_flash_sdp(True)
 torch.backends.cuda.enable_mem_efficient_sdp(True)
@@ -19,7 +20,6 @@ class REXConfig:
     max_length: int
     latent_dim: int
     dropout: float = 0.1
-
 
 class GroupedQueryAttention(nn.Module):
     def __init__(self, 
@@ -309,12 +309,18 @@ class Transformer(nn.Module):
             dropout=dropout
         )
 
-    def forward(self, input_ids: torch.Tensor, decoder_input_ids: torch.Tensor, attention_mask: torch.Tensor = None, decoder_attention_mask: torch.Tensor = None) -> torch.Tensor:
+    def forward(self, input_ids: torch.Tensor, decoder_input_ids: torch.Tensor, attention_mask: torch.Tensor = None, decoder_attention_mask: torch.Tensor = None, labels: torch.Tensor = None) -> Seq2SeqLMOutput:
         if attention_mask is not None:
             attention_mask = attention_mask[:, None, None, :].to(torch.bool)
         if decoder_attention_mask is not None:
             decoder_attention_mask = decoder_attention_mask[:, None, None, :].to(torch.bool)
         latent = self.encoder(input_ids, mask=attention_mask)
         output = self.decoder(decoder_input_ids, latent, mask=decoder_attention_mask)
-        return output
-    
+
+        if labels is not None:
+            loss = F.cross_entropy(output.view(-1, output.size(-1)), labels.view(-1), ignore_index=-100)
+        else:
+            loss = None
+
+        return Seq2SeqLMOutput(logits=output, loss=loss)
+
