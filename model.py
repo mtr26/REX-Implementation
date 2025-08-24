@@ -310,7 +310,28 @@ class Transformer(nn.Module):
         )
 
     def forward(self, input_ids: torch.Tensor, decoder_input_ids: torch.Tensor, attention_mask: torch.Tensor = None, decoder_attention_mask: torch.Tensor = None) -> torch.Tensor:
+        if attention_mask is not None:
+            attention_mask = attention_mask[:, None, None, :]
+        if decoder_attention_mask is not None:
+            decoder_attention_mask = decoder_attention_mask[:, None, None, :]
         latent = self.encoder(input_ids, mask=attention_mask)
         output = self.decoder(decoder_input_ids, latent, mask=decoder_attention_mask)
         return output
     
+
+
+input_ids = torch.randint(0, 1000, (2, 128)).cuda()
+attention_mask = torch.ones((2, 128))[:, None, None, :].to(torch.bool).cuda()
+
+model = Transformer(
+    dim=512,
+    vocab_size=1000,
+    encoder_layers=6,
+    decoder_layers=6,
+    num_heads=8,
+    max_length=128,
+    latent_dim=256,
+    dropout=0.1
+).cuda()
+
+print(model(input_ids, input_ids, attention_mask, attention_mask).shape)  # (2, 128, 1000)
