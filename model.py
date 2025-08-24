@@ -313,7 +313,7 @@ class Transformer(nn.Module):
         if attention_mask is not None:
             attention_mask = attention_mask[:, None, None, :].to(torch.bool)
         if decoder_attention_mask is not None:
-            decoder_attention_mask = decoder_attention_mask[:, None, None, :]
+            decoder_attention_mask = decoder_attention_mask[:, None, None, :].to(torch.bool)
         latent = self.encoder(input_ids, mask=attention_mask)
         output = self.decoder(decoder_input_ids, latent, mask=decoder_attention_mask)
         return output
